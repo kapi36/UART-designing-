@@ -1,0 +1,97 @@
+module tb ; 
+  reg rst; 
+  reg data_tx; 
+  reg [1:0] pt; 
+  reg clk ; 
+  reg[1:0] br; 
+  wire af; 
+  wire df;
+  wire [7:0] raw_data; 
+  UART_Rx dut(rst, data_tx, pt, clk, br, af, df, raw_data); 
+  
+  initial begin 
+    $dumpfile("tb.vcd"); 
+    $dumpvars ; 
+  end
+  initial begin
+    $monitor($time, "   The Outputs:  Data Out = %b   Active Flag = %b  Done Flag = %b  The Inputs:   Reset = %b   Data In = %b  Parity Type = %b  Baud Rate = %b ",raw_data[7:0], af, df, rst,  data_tx, pt[1:0], br[1:0]);
+    
+end
+  
+    initial 
+begin
+    rst = 1'b0;
+    #10 rst= 1'b1; 
+end
+
+//  System clock 50MHz
+initial 
+begin
+    clk= 1'b0;
+    forever 
+    begin
+        #10 clk = ~clk ; 
+    end
+end
+  initial 
+begin
+    //  Test for 9600 baud_rate
+    br = 2'b10;
+    //  Testing with ODD parity
+    pt = 2'b01;
+    //  Data for test, frame of 11001010110
+    //  with ODD parity, 1 stop bit
+    //  Sent at baud rate of 9600
+    data_tx = 1'b1;
+    //  Idle at first
+    #104166.667 data_tx = 1'b0;
+    #104166.667 data_tx = 1'b1;
+    #104166.667 data_tx = 1'b1;
+    #104166.667 data_tx = 1'b0;
+    #104166.667 data_tx = 1'b1;
+    #104166.667 data_tx = 1'b0;
+    #104166.667 data_tx = 1'b1;
+    #104166.667 data_tx = 1'b0;
+    #104166.667 data_tx = 1'b0;
+    #104166.667 data_tx = 1'b1;
+    //  Stop bit
+    #104166.667 data_tx = 1'b1;
+    #104166.667;
+    #104166.667;
+
+//  _____________________________
+
+    #100;
+    //  Test for 19200 baud_rate
+    br= 2'b11;
+    //  Testing with EVEN parity
+    pt = 2'b00;
+    //  Data for test, frame of 11001010110
+    //  with EVEN parity, 1 stop bit
+    //  Sent at baud rate of 19200
+    data_tx = 1'b1;
+    //  Idle at first
+    #52083.333 data_tx = 1'b0;
+    #52083.333 data_tx = 1'b1;
+    #52083.333 data_tx = 1'b1;
+    #52083.333 data_tx = 1'b0;
+    #52083.333 data_tx = 1'b1;
+    #52083.333 data_tx = 1'b0;
+    #52083.333 data_tx = 1'b1;
+    #52083.333 data_tx = 1'b0;
+    #52083.333 data_tx = 1'b0;
+    #52083.333 data_tx = 1'b1;
+    //  Stop bit
+    #52083.333;
+    data_tx = 1'b1;
+    #52083.333;
+
+end
+
+//  Stop
+initial begin
+    #2600000 $stop;
+    // Simulation for 2 ms
+end
+
+endmodule
