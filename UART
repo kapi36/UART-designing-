@@ -1,0 +1,25 @@
+So Here i  am explaining what is UART and how it makes simple life to do communication: 
+The printers , mice and modems which had thick cables with those huge clunky connectors use UART to communicate with computers. UART is somewhat replaced by usb, but in some devices like GPS module , Bluetooth modules , and RFID card reader modules use UART. 
+It stands for Universal Asynchronous Receiver Transmitter . 
+It is not a communication protocol like SPI and I2C. It is a physical circuit in a microcontroller or a stand alone IC. UART's main purpose is to transmit and receive serial data. 
+UART simply use two wires to transmit data between two devices. UART transmit data asynchronously , which means there is no clock signal to synchronize the output of bits
+Instead of clock signal the transmitting  UART adds start and stop bits. So the receiving device can start reading. 
+When the receiving UART detects a start bit, it start to read the incoming bits at a specific frequency known as baud rate. Baud rate is the measure of the speed of data transfer, expressed in bit per second. Both UART must operate at the same baud rate. Or difference between the UARTs differ by about 10%. 
+
+When we use parity bit then we can maximum send 8 bit. And if we don’t use parity then we can send about to maximum 9 bit. 
+Data frame can be 5 - 8 bit when the parity bit is used. Data is send with the lsb first. 
+Start bit: 
+Normally uart transmission line held high voltage level. When the UART start transmission it put the transmission line from high to low voltage transition. So when the receiving UART detect high to low voltage transition it begins reading the bits in the data frame at the frequency of the baud rate.
+
+Stop bit : To define the end of the packet the sending UART drives the data transmission line from a low voltage to a high  voltage . 
+
+There are different units present in Transmitter unit : 
+1. Baud rate generatro 
+2. Parity bit generator 
+3. PISO register 
+
+Also in receiver side there are different units: 
+1. Baud rate generator 
+2. SIPO register
+3. Deframe unit 
+
