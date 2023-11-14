@@ -1,0 +1,54 @@
+module tb;
+  reg rst; 
+  reg send; 
+  reg [1:0]pt; 
+  reg [7:0] data_in; 
+  reg [1:0] br; 
+  reg clk ; 
+  wire af; 
+  wire df; 
+  wire data_tx; 
+  
+  UART_Tx dut(rst, send, pt, data_in , br, clk , af, df, data_tx); 
+  
+  initial begin 
+    $dumpfile("tb.vcd"); 
+    $dumpvars; 
+  end
+  
+  initial begin 
+    $monitor($time, "Input: rst = %0b send = %0b pt = %0b data_in = %0b br = %0b clk= %0b Output : af = %0b df = %0b data_tx = %0b ", rst, send, pt[1:0], data_in[7:0], br[1:0] , clk, af, df, data_tx);  
+  end
+  
+  initial begin 
+    clk = 1'b0; 
+    forever 
+      #10 clk = ~clk; 
+  end
+    initial begin 
+      rst = 1'b0; 
+      send = 1'b0; 
+      #100
+      rst =1'b1 ; 
+      send = 1'b1;
+      
+    end
+    initial begin 
+      data_in = 8'b10101010 ; 
+      br = 2'b10; 
+      pt = 2'b00;
+      
+      #1354166.671;  
+      
+       data_in = 8'b10101010 ; 
+      br = 2'b11; 
+      pt = 2'b01;
+     #677083.329; 
+    end
+    
+    initial begin 
+      #260000 $stop ;
+    end
+    endmodule 
+    
+    
