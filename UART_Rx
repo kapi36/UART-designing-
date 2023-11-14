@@ -1,0 +1,182 @@
+module UART_Rx(
+  input wire rst, 
+  input wire data_tx, 
+  input wire [1:0]pt, // parity type 
+  input wire clk, 
+  input wire[1:0] br, // baud rate
+  output reg af,  // active flag
+  output reg df, // done flag 
+  output reg [7:0] raw_data
+ 
+); 
+  
+  wire bc ; // baud clk 
+  wire rf; // recieved flag
+  wire [10:0] data; 
+  wire stop; 
+  wire sb;
+  wire parity ; 
+  
+  baud unit1(clk ,rst, br,bc); 
+  sipo unit2(rst, bc , data_tx, data, rf, af); 
+  data_frame unit3(rst, data, rf,df,sb, stop , pb, raw_data); 
+  
+  
+  
+  
+endmodule 
+  
+  module baud(input wire clk ,input wire rst, input wire [1:0] br,output reg bc); 
+  
+  reg [9:0]clk_tick ; 
+  reg [9:0] final_value ; 
+ 
+  
+  localparam  baud24 = 2'b00, 
+  			  baud48 = 2'b01, 
+  			  baud96 = 2'b10, 
+  			  baud192 =2'b11; 
+  always @(*)begin 
+    case(br)
+      baud24: final_value =10'd651; 
+      baud48: final_value = 10'd326; 
+      baud96: final_value = 10'd163; 
+      baud192:final_value = 10'd81 ; 
+      default: final_value = 10'd163; 
+    endcase
+  end
+  
+      
+  always @(negedge rst, posedge clk) 
+    begin 
+      if(!rst) begin 
+        clk_tick <=10'd0 ; 
+        bc <= 1'b0 ; 
+      end
+      else if(clk_tick == final_value)begin 
+        bc <= ~bc ; 
+        clk_tick <=10'd0 ; 
+      end
+      else begin 
+        clk_tick <= clk_tick +1'd1; 
+        bc <= bc; 
+      end
+    end
+endmodule 
+
+module sipo(
+  input wire rst,
+  input wire bc,
+  input wire data_tx,
+  output reg [10:0]data,
+  output reg rf, // recieved flag
+  output reg af // active flg 
+); 
+  
+  reg [10:0] temp ; 
+  reg [10:0] temp2; 
+  reg[3:0] frame_counter , stop_count; 
+  reg[1:0] next_state ; 
+  
+  localparam idle = 2'b00, 
+  			 center = 2'b01,
+  			 frame  = 2'b10, 
+  			 get = 2'b11;
+  
+  always @(posedge bc, negedge rst)begin 
+    if(!rst)begin 
+       next_state <= idle ; 
+       stop_count<= 4'd0; 
+       frame_counter <=4'd0; 
+       temp <= {11{1'b1}}; end
+    else begin 
+      case(next_state)
+        idle:
+          begin 
+            stop_count<= 4'd0; 
+       		frame_counter <=4'd0; 
+            temp <= {11{1'b1}};
+            if(~data_tx)
+              next_state<= center; 
+            else 
+              next_state<=idle ;
+          end
+        center:
+          begin 
+            if(stop_count ==4'd6)begin 
+              stop_count <=4'd0 ;
+              next_state<=get; 
+             end
+            else begin 
+          	  stop_count<= stop_count+4'b1 ;
+              next_state <=center; 
+            end
+          end
+        frame: 
+          begin 
+            temp <= temp2; 
+            if(frame_counter == 4'd10)begin 
+              frame_counter<= 4'd0 ;
+              next_state<= idle ; 
+            end
+            
+            else begin
+              if(stop_count == 4'd14)begin 
+                frame_counter<= frame_counter+4'b1; 
+                stop_count<=4'd0; 
+                next_state<=center ; 
+              end
+              else begin 
+                frame_counter<=frame_counter ; 
+                stop_count <=stop_count+1'b1; 
+                next_state <=get; 
+              end
+            end
+            get:
+            begin 
+              next_state <= frame; 
+              temp<=temp2; 
+            end
+          end
+      endcase
+    end
+  end
+       
+        always @(*)begin 
+          case(next_state)
+            frame, idle, center:temp2 = temp; 
+            
+            get:begin 
+              temp2 <= temp>>1 ; 
+              temp2[10] <= data_tx;
+            end
+          endcase
+        end
+        
+        assign data = rf ? temp2 :{11{1'b1}}; 
+        assign rf = (frame_counter == 4'd11); 
+        assign af = !rf; 
+ endmodule 
+
+module data_frame(
+  input wire rst , 
+  input wire [10:0] data ,
+  input wire rf ,
+  output reg df , 
+  output reg sb ,// start bit 
+  output reg stop, /// stop bit 
+  output reg pb ,// parity bit 
+  output reg [7:0] raw_data
+); 
+  
+  always @(*)
+    begin 
+      sb = data[0] ; 
+      stop= data[10] ; 
+      raw_data= data[8:1]; 
+      pb = data[9]; 
+      df = rf;
+      
+    end
+endmodule 
+  
